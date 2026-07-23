@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CyberQuest</title>
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="shortcut icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#080810">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#080810;font-family:monospace;color:#cfe7ee;overflow:hidden}
+.wrap{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+.logo{font-size:22px;font-weight:700;letter-spacing:3px;color:#00f0ff;margin-bottom:6px}
+.logo b{color:#ff2ecb}
+.sub{font-size:11px;color:#6f8a99;margin-bottom:34px;letter-spacing:1px}
+.timer{font-size:56px;font-weight:700;color:#fff;margin-bottom:18px;min-width:70px}
+.msg{font-size:12px;color:#6f8a99;margin-bottom:10px;line-height:1.6}
+.status{font-size:10px;color:#3a5060;margin-bottom:24px;min-height:14px;word-break:break-all;padding:0 10px}
+.btn{padding:13px 26px;background:#00f0ff;color:#04141a;border:none;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;display:block;width:100%;max-width:260px;margin-bottom:10px}
+.btn:active{opacity:.85}
+.btn2{background:transparent;border:1px solid #1c2c3d;color:#6f8a99;font-size:10px;padding:11px 16px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">CYBER<b>QUEST</b></div>
+  <div class="sub">REDIRECTION VERS L'APPLICATION</div>
+  <div class="timer" id="t">--</div>
+  <div class="msg" id="msg">Recherche du bon chemin...</div>
+  <div class="status" id="status"></div>
+  <div id="manualLinks" style="display:none"></div>
+</div>
+<script>
+// ─────────────────────────────────────────────────────────
+// On ne devine plus la casse (Vr ou vr) : on teste les deux
+// automatiquement en sondant un fichier connu (icon-192.png)
+// et on redirige vers celle qui repond reellement.
+// A verifier/ajuster si le nom d'utilisateur GitHub differe.
+// ─────────────────────────────────────────────────────────
+var BASES = [
+  "https://simonjutge-debug.github.io/RpgCyberSimon/Vr/",
+  "https://simonjutge-debug.github.io/RpgCyberSimon/vr/"
+];
+
+var statusEl = document.getElementById("status");
+var msgEl = document.getElementById("msg");
+var timerEl = document.getElementById("t");
+
+function probe(i){
+  if(i >= BASES.length){
+    showManualLinks();
+    return;
+  }
+  statusEl.textContent = "Test : " + BASES[i];
+  var settled = false;
+  var img = new Image();
+  var to = setTimeout(function(){
+    if(!settled){ settled = true; probe(i+1); }
+  }, 2500);
+  img.onload = function(){
+    if(settled) return;
+    settled = true;
+    clearTimeout(to);
+    redirectWithCountdown(BASES[i] + "index.html");
+  };
+  img.onerror = function(){
+    if(settled) return;
+    settled = true;
+    clearTimeout(to);
+    probe(i+1);
+  };
+  img.src = BASES[i] + "icon-192.png?_=" + Date.now();
+}
+
+function redirectWithCountdown(dest){
+  msgEl.innerHTML = "Chemin trouve !<br>Chargement automatique...";
+  statusEl.textContent = "";
+  var n = 2;
+  timerEl.textContent = n;
+  var iv = setInterval(function(){
+    n--;
+    if(n <= 0){
+      clearInterval(iv);
+      window.location.replace(dest);
+    } else {
+      timerEl.textContent = n;
+    }
+  }, 1000);
+}
+
+function showManualLinks(){
+  timerEl.textContent = "!";
+  msgEl.textContent = "Aucun des deux chemins n'a repondu automatiquement.";
+  statusEl.textContent = "Choisis manuellement :";
+  var c = document.getElementById("manualLinks");
+  c.style.display = "block";
+  BASES.forEach(function(b){
+    var btn = document.createElement("button");
+    btn.className = "btn btn2";
+    btn.textContent = b;
+    btn.addEventListener("click", function(){ window.location.replace(b + "index.html"); });
+    c.appendChild(btn);
+  });
+}
+
+probe(0);
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(function(){});
+}
+</script>
+</body>
+</html>
